@@ -1,0 +1,246 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <title>List City</title>
+</head>
+
+<body>
+
+<h1>Danh sách thành phố</h1>
+<button type="button" onclick="renderModalCreate()" class="btn btn-primary">Thêm thành phố</button>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">STT</th>
+        <th scope="col">Name City</th>
+        <th scope="col">Quốc gia</th>
+        <th scope="col">Chỉnh sửa</th>
+        <th scope="col">Xóa</th>
+    </tr>
+    </thead>
+    <tbody id="listCity">
+
+    </tbody>
+</table>
+
+<!--modal-->
+
+<div id="edit-city-modal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modalEdit">
+
+
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="createNewCity()" class="btn btn-primary">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+
+    window.onload = function (){
+        showListCity();
+    }
+
+    function renderModalCreate(){
+        $('#edit-city-modal').modal('show')
+        let modalEdit =
+            `<form>
+                    <div class="form-group">
+                        <input type="hidden" class="form-control" id="old-city-id" >
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Tên:</label>
+                        <input type="text" class="form-control" id="name-create">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputState">State</label>
+                        <select id="countryList" class="form-control">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Dân số:</label>
+                        <input type="text" class="form-control" id="population-create">
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">GDP:</label>
+                        <input type="text" class="form-control" id="gdp-create">
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Giới thiệu:</label>
+                        <textarea type="text" class="form-control" id="description-create">
+                        </textarea>
+                    </div>
+             </form>`
+        updateCountryList();
+        $('#modalEdit').html(modalEdit);
+
+    }
+
+    function createNewCity() {
+        let id = $('#old-city-id').val();
+        let name = $('#name-create').val();
+        let country = $('#countryList').val();
+        let population = $('#population-create').val();
+        let gdp = $('#gdp-create').val();
+        let description = $('#description-create').val();
+        let newCity = {
+            id: id,
+            name: name,
+            country: {
+                id: country
+            },
+            population: population,
+            gdp: gdp,
+            description: description,
+        };
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "POST",
+            data: JSON.stringify(newCity),
+            url: "/city",
+            success: showListCity
+        })
+        event.preventDefault();
+    }
+
+    function updateCountryList() {
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: "GET",
+            //tên API
+            url: "/city/country",
+            success: function (data){
+                let content = ""
+                for (let i = 0; i < data.length; i++) {
+                    content +=
+                        `<option value="${data[i].id}">
+                           ${data[i].name}
+                        </option>`
+                }
+                document.getElementById("countryList").innerHTML = content;
+                showEditModal();
+            }
+        });
+    }
+    
+    function showEdit(cityId) {
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            type: "GET",
+            //tên API
+            url: "/city/" +cityId,
+            success: function (data){
+                renderEditModal(data)
+            }
+        });
+    }
+
+    function renderEditModal(city){
+        let modalEdit =
+            `<form>
+                    <div class="form-group">
+                        <input type="hidden" class="form-control" id="old-city-id" value="${city.id}">
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Tên:</label>
+                        <input type="text" class="form-control" id="name-create" value="${city.name}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="inputState">State</label>
+                        <select id="countryList" class="form-control" value="${city.country.name}">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Dân số:</label>
+                        <input type="text" class="form-control" id="population-create" value="${city.population}">
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">GDP:</label>
+                        <input type="text" class="form-control" id="gdp-create" value="${city.gdp}">
+                    </div>
+                    <div class="form-group">
+                        <label for="formGroupExampleInput">Giới thiệu:</label>
+                        <textarea type="text" class="form-control" id="description-create" value="${city.description}">
+                        </textarea>
+                    </div>
+             </form>`
+
+        $('#modalEdit').html(modalEdit);
+        updateCountryList();
+    }
+
+    function showEditModal() {
+        $('#edit-city-modal').modal('show');
+    }
+
+
+    function showListCity(){
+        $('#edit-city-modal').modal('hide')
+        $.ajax({
+            type: "GET",
+            //tên API
+            url: "/city",
+            success: function (data) {
+                let content = "";
+                for (let i = 0; i < data.length; i++) {
+                    content += getListCity(data[i])
+                }
+                document.getElementById("listCity").innerHTML = content;
+            }
+        })
+    }
+
+    function getListCity(city){
+        return "" +
+            `<tr>
+                <td>${city.id}</td>
+                <td>${city.name}</td>
+                <td>${city.country.name}</td>
+                <td><button type="button" onclick="showEdit(${city.id})" class="btn btn-primary">Edit</button></td>
+                <td><button type="button" onclick="deleteCity(${city.id})" class="btn btn-danger">Delete</button></td>
+             </tr>`
+    }
+
+    function deleteCity(cityId) {
+        $.ajax({
+            type: "POST",
+            //tên API
+            url: "/city/" + cityId,
+            success: function () {
+                console.log("success")
+                showListCity();
+            }
+        })
+    }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
